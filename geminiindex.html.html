@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="ky">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Үй жана Терезе Конструктору</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            overflow: hidden;
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        body {
+            display: flex;
+        }
+
+        /* Сол тараптагы жөндөө панели */
+        .sidebar {
+            flex: 0 0 340px;
+            width: 340px;
+            min-width: 340px;
+            background: #ffffff;
+            padding: 16px 18px;
+            border-right: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            z-index: 10;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.08);
+        }
+
+        body.view-mode .sidebar {
+            display: none;
+        }
+
+        .sidebar h2 {
+            font-size: 1.15rem;
+            color: #1d4ed8;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 6px;
+        }
+
+        .group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .group label {
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .input-box span {
+            font-size: 0.74rem;
+            color: #64748b;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 16px;
+            color: #1e293b;
+            background: #ffffff;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .part-btn {
+            padding: 9px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #1e293b;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .part-btn.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 9px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .sash-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #f8fafc;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .sash-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.86rem;
+            color: #334155;
+        }
+
+        .sash-item span {
+            white-space: nowrap;
+        }
+
+        .colors {
+            display: flex;
+            gap: 12px;
+        }
+
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #94a3b8;
+        }
+
+        .color-dot.active {
+            border: 3px solid #2563eb;
+            transform: scale(1.15);
+        }
+
+        .finish-btn {
+            margin-top: auto;
+            padding: 12px;
+            background: #16a34a;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+            flex-shrink: 0;
+        }
+
+        .finish-btn:hover {
+            background: #15803d;
+        }
+
+        /* 3D Экран */
+        #canvas-container {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            height: 100%;
+            position: relative;
+            background: linear-gradient(to bottom, #93c5fd 0%, #dbeafe 65%, #e2e8f0 100%);
+            touch-action: none;
+        }
+
+        #canvas-container canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            touch-action: none;
+        }
+
+        body.view-mode #canvas-container {
+            cursor: grab;
+        }
+
+        body.view-mode #canvas-container:active {
+            cursor: grabbing;
+        }
+
+        /* Көрүү режиминдеги баскычтар */
+        .view-overlay {
+            display: none;
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        body.view-mode .view-overlay {
+            display: flex;
+        }
+
+        .back-btn, .open-btn {
+            pointer-events: auto;
+            padding: 11px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: none;
+        }
+
+        .back-btn {
+            background: #ffffff;
+            color: #1e293b;
+        }
+
+        .open-btn {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        /* Телефон экрандары үчүн адаптация */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column-reverse;
+            }
+            .sidebar {
+                flex: 0 0 54%;
+                width: 100%;
+                min-width: 100%;
+                height: 54%;
+                padding: 12px 14px;
+                gap: 9px;
+                border-right: none;
+                border-top: 1px solid #cbd5e1;
+                box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.08);
+            }
+            .sidebar h2 {
+                font-size: 1.05rem;
+                padding-bottom: 4px;
+            }
+            #canvas-container {
+                flex: 1 1 46%;
+                width: 100%;
+                height: 46%;
+            }
+            body.view-mode #canvas-container {
+                flex: 1 1 100%;
+                height: 100%;
+            }
+            body.view-mode .sidebar {
+                display: none;
+            }
+            .finish-btn {
+                position: sticky;
+                bottom: 0;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Терезе макеттөө</h2>
+
+        <div class="group">
+            <label>1. Өлчөмү (см):</label>
+            <div class="row">
+                <div class="input-box">
+                    <span>Туурасы (см)</span>
+                    <input type="number" id="widthInput" value="210" min="60" max="380">
+                </div>
+                <div class="input-box">
+                    <span>Бийиктиги (см)</span>
+                    <input type="number" id="heightInput" value="160" min="60" max="240">
+                </div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label>2. Профиль түсү:</label>
+            <div class="colors">
+                <div class="color-dot" style="background:#ffffff;" data-color="#f8fafc" title="Ак"></div>
+                <div class="color-dot active" style="background:#27272a;" data-color="#27272a" title="Антрацит / Кара"></div>
+                <div class="color-dot" style="background:#6b3e26;" data-color="#6b3e26" title="Алтын эмен"></div>
+                <div class="color-dot" style="background:#475569;" data-color="#475569" title="Боз"></div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label>3. Бөлүнүшү (1–4):</label>
+            <div class="btn-group" id="divisionBtns">
+                <button class="part-btn" data-parts="1">1</button>
+                <button class="part-btn" data-parts="2">2</button>
+                <button class="part-btn active" data-parts="3">3</button>
+                <button class="part-btn" data-parts="4">4</button>
+            </div>
+        </div>
+
+        <div class="group">
+            <label>4. Үстүнкү торко (Фрамуга):</label>
+            <label class="checkbox-row">
+                <input type="checkbox" id="transomCheck" checked>
+                <span>Үстүнөн торко бөлүү</span>
+            </label>
+            <div id="transomSection" style="display: flex; flex-direction: column; gap: 6px;">
+                <div class="input-box">
+                    <span>Үстүнкү торконун бийиктиги (см):</span>
+                    <input type="number" id="transomHeight" value="42" min="25" max="120">
+                </div>
+                <label>Үстүнкү торко бөлүктөрү (Форточка):</label>
+                <div class="sash-list" id="transomControls"></div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label>5. Бөлүктөр жана ачылышы:</label>
+            <div class="sash-list" id="sashControls"></div>
+        </div>
+
+        <button class="finish-btn" id="finishBtn">Алга</button>
+    </div>
+
+    <div id="canvas-container">
+        <div class="view-overlay">
+            <button class="back-btn" id="editBtn">Артка</button>
+            <button class="open-btn" id="toggleOpenBtn">Ачуу</button>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            width: 210,
+            height: 160,
+            parts: 3,
+            hasTransom: true,
+            transomHeight: 42,
+            transomSashes: ['fixed', 'vent', 'fixed'],
+            sashes: ['fixed', 'right', 'fixed'],
+            color: '#27272a',
+            isOpen: false,
+            isFinished: false
+        };
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(42, Math.max(container.clientWidth, 1) / Math.max(container.clientHeight, 1), 0.1, 150);
+        camera.position.set(0, 0, 3.5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.08;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.touches = {
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN
+        };
+        controls.target.set(0, 0, 0);
+        controls.enabled = false;
+        controls.update();
+
+        // Жарыктар
+        const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x94a3b8, 0.8);
+        hemiLight.position.set(0, 20, 0);
+        scene.add(hemiLight);
+
+        const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
+        sunLight.position.set(-10, 16, 12);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        sunLight.shadow.camera.near = 1;
+        sunLight.shadow.camera.far = 40;
+        const d = 10;
+        sunLight.shadow.camera.left = -d;
+        sunLight.shadow.camera.right = d;
+        sunLight.shadow.camera.top = d;
+        sunLight.shadow.camera.bottom = -d;
+        sunLight.shadow.bias = -0.0005;
+        scene.add(sunLight);
+
+        function createBrickTexture(repeatX, repeatY) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(0, 0, 512, 512);
+            const rows = 16;
+            const cols = 8;
+            const rowH = 512 / rows;
+            const colW = 512 / cols;
+            for (let r = 0; r < rows; r++) {
+                const offset = (r % 2) * (colW / 2);
+                for (let c = -1; c <= cols; c++) {
+                    const shade = 140 + Math.floor(Math.random() * 35);
+                    ctx.fillStyle = `rgb(${shade}, ${Math.floor(shade * 0.42)}, ${Math.floor(shade * 0.32)})`;
+                    ctx.fillRect(c * colW + offset + 2, r * rowH + 2, colW - 4, rowH - 4);
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(repeatX, repeatY);
+            return tex;
+        }
+
+        function createRoofTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, 0, 256, 256);
+
+            for (let y = 0; y < 256; y += 32) {
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, y + 28, 256, 4);
+                for (let x = 0; x < 256; x += 32) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                    ctx.beginPath();
+                    ctx.arc(x + 16, y + 24, 15, 0, Math.PI, false);
+                    ctx.stroke();
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(10, 8);
+            return tex;
+        }
+
+        const houseGroup = new THREE.Group();
+        const windowGroup = new THREE.Group();
+        scene.add(houseGroup);
+        scene.add(windowGroup);
+        let animatedSashes = [];
+        let animatedVents = [];
+
+        const brickTex = createBrickTexture(3, 2);
+        const extrudeBrickTex = createBrickTexture(0.45, 0.45);
+        const roofTex = createRoofTexture();
+
+        function build3DHouse() {
+            while (houseGroup.children.length > 0) {
+                houseGroup.remove(houseGroup.children[0]);
+            }
+
+            const boxWallMat = new THREE.MeshStandardMaterial({
+                map: brickTex,
+                bumpMap: brickTex,
+                bumpScale: 0.015,
+                roughness: 0.85
+            });
+
+            const extrudeWallMat = new THREE.MeshStandardMaterial({
+                map: extrudeBrickTex,
+                bumpMap: extrudeBrickTex,
+                bumpScale: 0.015,
+                roughness: 0.85
+            });
+
+            const plinthMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.9 });
+            const roofMat = new THREE.MeshStandardMaterial({
+                map: roofTex,
+                bumpMap: roofTex,
+                bumpScale: 0.02,
+                roughness: 0.55
+            });
+            const trimMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.5 });
+
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(100, 100),
+                new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.9 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            houseGroup.add(ground);
+
+            const patio = new THREE.Mesh(
+                new THREE.BoxGeometry(8.4, 0.08, 7.6),
+                new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.8 })
+            );
+            patio.position.set(0, 0.04, -3.05);
+            patio.receiveShadow = true;
+            houseGroup.add(patio);
+
+            const plinth = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.65, 6.2), plinthMat);
+            plinth.position.set(0, 0.325, -3.05);
+            plinth.castShadow = true;
+            plinth.receiveShadow = true;
+            houseGroup.add(plinth);
+
+            const frontWall = new THREE.Mesh(new THREE.BoxGeometry(7.1, 3.4, 0.25), boxWallMat);
+            frontWall.position.set(0, 2.35, -0.125);
+            frontWall.castShadow = true;
+            frontWall.receiveShadow = true;
+            houseGroup.add(frontWall);
+
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, 3.4, 5.6), boxWallMat);
+            rightWall.position.set(3.425, 2.35, -3.05);
+            rightWall.castShadow = true;
+            rightWall.receiveShadow = true;
+            houseGroup.add(rightWall);
+
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(7.1, 3.4, 0.25), boxWallMat);
+            backWall.position.set(0, 2.35, -5.975);
+            backWall.castShadow = true;
+            houseGroup.add(backWall);
+
+            const winW = (state.width || 210) / 100;
+            const winH = (state.height || 160) / 100;
+            const winCenterY = 2.0;
+
+            const leftWallShape = new THREE.Shape();
+            leftWallShape.moveTo(-2.8, 0.65);
+            leftWallShape.lineTo(2.8, 0.65);
+            leftWallShape.lineTo(2.8, 4.05);
+            leftWallShape.lineTo(-2.8, 4.05);
+            leftWallShape.closePath();
+
+            const hole = new THREE.Path();
+            hole.moveTo(-winW / 2, winCenterY - winH / 2);
+            hole.lineTo(winW / 2, winCenterY - winH / 2);
+            hole.lineTo(winW / 2, winCenterY + winH / 2);
+            hole.lineTo(-winW / 2, winCenterY + winH / 2);
+            hole.closePath();
+            leftWallShape.holes.push(hole);
+
+            const leftWallGeo = new THREE.ExtrudeGeometry(leftWallShape, { depth: 0.25, bevelEnabled: false });
+            const leftWall = new THREE.Mesh(leftWallGeo, extrudeWallMat);
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.position.set(-3.55, 0, -3.05);
+            leftWall.castShadow = true;
+            leftWall.receiveShadow = true;
+            houseGroup.add(leftWall);
+
+            const innerFloor = new THREE.Mesh(
+                new THREE.PlaneGeometry(6.6, 5.6),
+                new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.7 })
+            );
+            innerFloor.rotation.x = -Math.PI / 2;
+            innerFloor.position.set(0, 0.66, -3.05);
+            houseGroup.add(innerFloor);
+
+            const innerCeiling = new THREE.Mesh(
+                new THREE.PlaneGeometry(6.6, 5.6),
+                new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 })
+            );
+            innerCeiling.rotation.x = Math.PI / 2;
+            innerCeiling.position.set(0, 4.02, -3.05);
+            houseGroup.add(innerCeiling);
+
+            const innerRightWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(5.6, 3.36),
+                new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.85 })
+            );
+            innerRightWall.rotation.y = -Math.PI / 2;
+            innerRightWall.position.set(3.28, 2.34, -3.05);
+            houseGroup.add(innerRightWall);
+
+            const innerFrontWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(6.6, 3.36),
+                new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.85 })
+            );
+            innerFrontWall.rotation.y = Math.PI;
+            innerFrontWall.position.set(0, 2.34, -0.26);
+            houseGroup.add(innerFrontWall);
+
+            const innerBackWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(6.6, 3.36),
+                new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.85 })
+            );
+            innerBackWall.position.set(0, 2.34, -5.84);
+            houseGroup.add(innerBackWall);
+
+            const roomLight = new THREE.PointLight(0xffedd5, 0.9, 9);
+            roomLight.position.set(-1.5, 3.2, -3.05);
+            houseGroup.add(roomLight);
+
+            const cornerPositions = [[-3.52, -0.02], [3.52, -0.02], [-3.52, -6.08], [3.52, -6.08]];
+            cornerPositions.forEach(([cx, cz]) => {
+                const col = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.4, 0.18), trimMat);
+                col.position.set(cx, 2.35, cz);
+                col.castShadow = true;
+                houseGroup.add(col);
+            });
+
+            const cornice = new THREE.Mesh(new THREE.BoxGeometry(7.35, 0.18, 6.35), trimMat);
+            cornice.position.set(0, 4.05, -3.05);
+            houseGroup.add(cornice);
+
+            const roofShape = new THREE.Shape();
+            roofShape.moveTo(-3.95, 0);
+            roofShape.lineTo(0, 2.5);
+            roofShape.lineTo(3.95, 0);
+            roofShape.lineTo(3.75, -0.18);
+            roofShape.lineTo(0, 2.25);
+            roofShape.lineTo(-3.75, -0.18);
+            roofShape.closePath();
+
+            const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(roofShape, { depth: 6.7, bevelEnabled: false }), roofMat);
+            roof.position.set(0, 4.1, -6.4);
+            roof.castShadow = true;
+            houseGroup.add(roof);
+
+            const gableShape = new THREE.Shape();
+            gableShape.moveTo(-3.55, 0);
+            gableShape.lineTo(0, 2.25);
+            gableShape.lineTo(3.55, 0);
+            gableShape.closePath();
+            const gableWall = new THREE.Mesh(new THREE.ExtrudeGeometry(gableShape, { depth: 6.1, bevelEnabled: false }), extrudeWallMat);
+            gableWall.position.set(0, 4.1, -6.1);
+            houseGroup.add(gableWall);
+
+            const step1 = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.22, 1.1), plinthMat);
+            step1.position.set(1.8, 0.11, 0.45);
+            step1.receiveShadow = true;
+            houseGroup.add(step1);
+
+            const step2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.44, 0.75), plinthMat);
+            step2.position.set(1.8, 0.22, 0.28);
+            step2.receiveShadow = true;
+            houseGroup.add(step2);
+
+            const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.35, 0.12), trimMat);
+            doorFrame.position.set(1.8, 1.82, 0.02);
+            houseGroup.add(doorFrame);
+
+            const doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(0.98, 2.22, 0.08), doorMat);
+            doorLeaf.position.set(1.8, 1.78, 0.03);
+            houseGroup.add(doorLeaf);
+
+            const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.1, 0.9), roofMat);
+            canopy.position.set(1.8, 3.15, 0.42);
+            canopy.castShadow = true;
+            houseGroup.add(canopy);
+
+            const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.3, 0.65), plinthMat);
+            chimney.position.set(1.6, 6.2, -3.5);
+            chimney.castShadow = true;
+            houseGroup.add(chimney);
+
+            const pipeGeo = new THREE.CylinderGeometry(0.05, 0.05, 4.0, 12);
+            const pipe1 = new THREE.Mesh(pipeGeo, roofMat);
+            pipe1.position.set(-3.6, 2.05, 0.05);
+            houseGroup.add(pipe1);
+
+            const pipe2 = new THREE.Mesh(pipeGeo, roofMat);
+            pipe2.position.set(3.6, 2.05, 0.05);
+            houseGroup.add(pipe2);
+
+            houseGroup.visible = state.isFinished;
+        }
+
+        function build3DWindow() {
+            while (windowGroup.children.length > 0) {
+                windowGroup.remove(windowGroup.children[0]);
+            }
+            animatedSashes = [];
+            animatedVents = [];
+
+            const W = (state.width || 100) / 100;
+            const H = (state.height || 100) / 100;
+            const depth = 0.08;
+            const frameThick = 0.06;
+
+            const tH = state.hasTransom ? Math.min(state.transomHeight, state.height - 40) / 100 : 0;
+            const mainH = H - tH;
+
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: state.color,
+                roughness: 0.35,
+                metalness: 0.15
+            });
+
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0xe0f2fe,
+                transparent: true,
+                opacity: 0.28,
+                roughness: 0.05,
+                metalness: 0.1,
+                side: THREE.DoubleSide
+            });
+
+            const handleMat = new THREE.MeshStandardMaterial({
+                color: state.color === '#f8fafc' ? '#94a3b8' : '#e2e8f0',
+                roughness: 0.25,
+                metalness: 0.8
+            });
+
+            if (state.isFinished) {
+                windowGroup.position.set(-3.45, 2.0, -3.05);
+                windowGroup.rotation.y = -Math.PI / 2;
+
+                const trimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.45 });
+                const trimW = 0.09;
+
+                const topTrim = new THREE.Mesh(new THREE.BoxGeometry(W + trimW * 2, trimW, 0.05), trimMat);
+                topTrim.position.set(0, H / 2 + trimW / 2, 0.09);
+                topTrim.castShadow = true;
+                windowGroup.add(topTrim);
+
+                const leftTrim = new THREE.Mesh(new THREE.BoxGeometry(trimW, H, 0.05), trimMat);
+                leftTrim.position.set(-W / 2 - trimW / 2, 0, 0.09);
+                leftTrim.castShadow = true;
+                windowGroup.add(leftTrim);
+
+                const rightTrim = new THREE.Mesh(new THREE.BoxGeometry(trimW, H, 0.05), trimMat);
+                rightTrim.position.set(W / 2 + trimW / 2, 0, 0.09);
+                rightTrim.castShadow = true;
+                windowGroup.add(rightTrim);
+
+                const sill = new THREE.Mesh(
+                    new THREE.BoxGeometry(W + trimW * 2 + 0.06, 0.045, 0.18),
+                    new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3, metalness: 0.4 })
+                );
+                sill.position.set(0, -H / 2 - 0.022, 0.13);
+                sill.castShadow = true;
+                windowGroup.add(sill);
+            } else {
+                windowGroup.position.set(0, 0, 0);
+                windowGroup.rotation.y = 0;
+            }
+
+            // Сырткы 4 рамка
+            const topBar = new THREE.Mesh(new THREE.BoxGeometry(W, frameThick, depth), frameMat);
+            topBar.position.set(0, H / 2 - frameThick / 2, 0);
+            windowGroup.add(topBar);
+
+            const bottomBar = new THREE.Mesh(new THREE.BoxGeometry(W, frameThick, depth), frameMat);
+            bottomBar.position.set(0, -H / 2 + frameThick / 2, 0);
+            windowGroup.add(bottomBar);
+
+            const leftBar = new THREE.Mesh(new THREE.BoxGeometry(frameThick, H - frameThick * 2, depth), frameMat);
+            leftBar.position.set(-W / 2 + frameThick / 2, 0, 0);
+            windowGroup.add(leftBar);
+
+            const rightBar = new THREE.Mesh(new THREE.BoxGeometry(frameThick, H - frameThick * 2, depth), frameMat);
+            rightBar.position.set(W / 2 - frameThick / 2, 0, 0);
+            windowGroup.add(rightBar);
+
+            if (state.hasTransom) {
+                const transImpost = new THREE.Mesh(new THREE.BoxGeometry(W - frameThick * 2, frameThick * 0.9, depth), frameMat);
+                transImpost.position.set(0, H / 2 - tH, 0);
+                windowGroup.add(transImpost);
+            }
+
+            const innerW = W - frameThick * 2;
+            const partW = innerW / state.parts;
+
+            for (let i = 1; i < state.parts; i++) {
+                const xPos = -innerW / 2 + i * partW;
+                const vImpost = new THREE.Mesh(new THREE.BoxGeometry(frameThick * 0.85, H - frameThick * 2, depth), frameMat);
+                vImpost.position.set(xPos, 0, 0);
+                windowGroup.add(vImpost);
+            }
+
+            // Үстүнкү торко (Фрамуга) жана форточкалар
+            if (state.hasTransom) {
+                const topCellH = tH - frameThick * 1.45;
+                const topY = H / 2 - tH / 2 - frameThick * 0.25;
+                for (let i = 0; i < state.parts; i++) {
+                    const xCenter = -innerW / 2 + (i + 0.5) * partW;
+                    const cellW = partW - frameThick * 0.85;
+                    const ventType = state.transomSashes[i] || 'fixed';
+
+                    if (ventType === 'fixed') {
+                        const glass = new THREE.Mesh(new THREE.BoxGeometry(cellW, topCellH, 0.015), glassMat);
+                        glass.position.set(xCenter, topY, 0);
+                        windowGroup.add(glass);
+                    } else {
+                        const ventPivot = new THREE.Group();
+                        ventPivot.position.set(xCenter, topY + topCellH / 2, depth * 0.2);
+
+                        const ventLeaf = new THREE.Group();
+                        ventLeaf.position.set(0, -topCellH / 2, 0);
+
+                        const vThick = 0.035;
+                        const vDepth = 0.045;
+
+                        const vtTop = new THREE.Mesh(new THREE.BoxGeometry(cellW, vThick, vDepth), frameMat);
+                        vtTop.position.set(0, topCellH / 2 - vThick / 2, 0);
+                        ventLeaf.add(vtTop);
+
+                        const vtBot = new THREE.Mesh(new THREE.BoxGeometry(cellW, vThick, vDepth), frameMat);
+                        vtBot.position.set(0, -topCellH / 2 + vThick / 2, 0);
+                        ventLeaf.add(vtBot);
+
+                        const vtLeft = new THREE.Mesh(new THREE.BoxGeometry(vThick, topCellH - vThick * 2, vDepth), frameMat);
+                        vtLeft.position.set(-cellW / 2 + vThick / 2, 0, 0);
+                        ventLeaf.add(vtLeft);
+
+                        const vtRight = new THREE.Mesh(new THREE.BoxGeometry(vThick, topCellH - vThick * 2, vDepth), frameMat);
+                        vtRight.position.set(cellW / 2 - vThick / 2, 0, 0);
+                        ventLeaf.add(vtRight);
+
+                        const vGlass = new THREE.Mesh(new THREE.BoxGeometry(cellW - vThick * 2, topCellH - vThick * 2, 0.015), glassMat);
+                        ventLeaf.add(vGlass);
+
+                        const vHandle = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.015, 0.02), handleMat);
+                        vHandle.position.set(0, -topCellH / 2 + vThick / 2, vDepth / 2 + 0.009);
+                        ventLeaf.add(vHandle);
+
+                        ventPivot.add(ventLeaf);
+                        windowGroup.add(ventPivot);
+
+                        animatedVents.push({
+                            pivot: ventPivot,
+                            targetAngle: state.isOpen ? -0.55 : 0
+                        });
+                    }
+                }
+            }
+
+            const botH = mainH - (state.hasTransom ? frameThick * 1.45 : frameThick * 2);
+            const botY = -H / 2 + mainH / 2 + (state.hasTransom ? frameThick * 0.25 : 0);
+
+            for (let i = 0; i < state.parts; i++) {
+                const type = state.sashes[i] || 'fixed';
+                const xCenter = -innerW / 2 + (i + 0.5) * partW;
+                const sW = partW - frameThick * 0.85;
+
+                if (type === 'fixed') {
+                    const glass = new THREE.Mesh(new THREE.BoxGeometry(sW, botH, 0.015), glassMat);
+                    glass.position.set(xCenter, botY, 0);
+                    windowGroup.add(glass);
+                } else {
+                    const pivotGroup = new THREE.Group();
+                    const hingeX = type === 'left' ? xCenter - sW / 2 : xCenter + sW / 2;
+                    pivotGroup.position.set(hingeX, botY, depth * 0.2);
+
+                    const sashGroup = new THREE.Group();
+                    sashGroup.position.set(type === 'left' ? sW / 2 : -sW / 2, 0, 0);
+
+                    const sThick = 0.045;
+                    const sDepth = 0.05;
+
+                    const stTop = new THREE.Mesh(new THREE.BoxGeometry(sW, sThick, sDepth), frameMat);
+                    stTop.position.set(0, botH / 2 - sThick / 2, 0);
+                    sashGroup.add(stTop);
+
+                    const stBot = new THREE.Mesh(new THREE.BoxGeometry(sW, sThick, sDepth), frameMat);
+                    stBot.position.set(0, -botH / 2 + sThick / 2, 0);
+                    sashGroup.add(stBot);
+
+                    const stLeft = new THREE.Mesh(new THREE.BoxGeometry(sThick, botH - sThick * 2, sDepth), frameMat);
+                    stLeft.position.set(-sW / 2 + sThick / 2, 0, 0);
+                    sashGroup.add(stLeft);
+
+                    const stRight = new THREE.Mesh(new THREE.BoxGeometry(sThick, botH - sThick * 2, sDepth), frameMat);
+                    stRight.position.set(sW / 2 - sThick / 2, 0, 0);
+                    sashGroup.add(stRight);
+
+                    const sGlass = new THREE.Mesh(new THREE.BoxGeometry(sW - sThick * 2, botH - sThick * 2, 0.015), glassMat);
+                    sashGroup.add(sGlass);
+
+                    const handleX = type === 'left' ? sW / 2 - sThick / 2 : -sW / 2 + sThick / 2;
+                    const handleBase = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.055, 0.015), handleMat);
+                    handleBase.position.set(handleX, 0, sDepth / 2 + 0.007);
+                    sashGroup.add(handleBase);
+
+                    const handleLever = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.11, 0.02), handleMat);
+                    handleLever.position.set(handleX, -0.04, sDepth / 2 + 0.022);
+                    sashGroup.add(handleLever);
+
+                    pivotGroup.add(sashGroup);
+                    windowGroup.add(pivotGroup);
+
+                    animatedSashes.push({
+                        pivot: pivotGroup,
+                        targetAngle: state.isOpen ? (type === 'left' ? 0.75 : -0.75) : 0
+                    });
+                }
+            }
+        }
+
+        function renderTransomControls() {
+            const list = document.getElementById('transomControls');
+            list.innerHTML = '';
+            state.transomSashes.forEach((val, idx) => {
+                const row = document.createElement('div');
+                row.className = 'sash-item';
+                row.innerHTML = `<span>${idx + 1}-торко:</span>`;
+
+                const sel = document.createElement('select');
+                [
+                    { v: 'fixed', t: 'Жөнөкөй (Ачылбайт)' },
+                    { v: 'vent', t: 'Форточка (Ачылат)' }
+                ].forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o.v;
+                    opt.textContent = o.t;
+                    if (o.v === val) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+
+                sel.addEventListener('change', (e) => {
+                    state.transomSashes[idx] = e.target.value;
+                    build3DWindow();
+                });
+
+                row.appendChild(sel);
+                list.appendChild(row);
+            });
+        }
+
+        function renderSashControls() {
+            const list = document.getElementById('sashControls');
+            list.innerHTML = '';
+            state.sashes.forEach((val, idx) => {
+                const row = document.createElement('div');
+                row.className = 'sash-item';
+                row.innerHTML = `<span>${idx + 1}-бөлүк:</span>`;
+
+                const sel = document.createElement('select');
+                [
+                    { v: 'fixed', t: 'Ачылбайт (Глухой)' },
+                    { v: 'left', t: 'Солго ачылат' },
+                    { v: 'right', t: 'Оңго ачылат' }
+                ].forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o.v;
+                    opt.textContent = o.t;
+                    if (o.v === val) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+
+                sel.addEventListener('change', (e) => {
+                    state.sashes[idx] = e.target.value;
+                    build3DWindow();
+                });
+
+                row.appendChild(sel);
+                list.appendChild(row);
+            });
+        }
+
+        function getEditCameraDistance() {
+            const w = Math.max(container.clientWidth, 1);
+            const h = Math.max(container.clientHeight, 1);
+            const aspect = w / h;
+            const winW = (state.width || 210) / 100;
+            const winH = (state.height || 160) / 100;
+            const fovRad = THREE.MathUtils.degToRad(camera.fov);
+            const distH = (winH * 1.45) / (2 * Math.tan(fovRad / 2));
+            const distW = (winW * 1.35) / (2 * Math.tan(fovRad / 2) * aspect);
+            return Math.max(distH, distW, 2.8);
+        }
+
+        function updateRendererSize() {
+            const w = Math.max(container.clientWidth, 1);
+            const h = Math.max(container.clientHeight, 1);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            if (!state.isFinished) {
+                camera.position.set(0, 0, getEditCameraDistance());
+            }
+        }
+
+        function setViewMode(finished) {
+            state.isFinished = finished;
+            controls.enabled = finished;
+
+            if (finished) {
+                document.body.classList.add('view-mode');
+                updateRendererSize();
+                build3DHouse();
+                build3DWindow();
+                const isMobile = window.innerWidth <= 768;
+                camera.position.set(isMobile ? -9.5 : -8.2, 3.6, isMobile ? 4.2 : 3.2);
+                controls.target.set(-0.5, 2.2, -2.8);
+                controls.minDistance = 2.2;
+                controls.maxDistance = 18.0;
+                controls.maxPolarAngle = Math.PI / 2 - 0.03;
+            } else {
+                document.body.classList.remove('view-mode');
+                updateRendererSize();
+                state.isOpen = false;
+                document.getElementById('toggleOpenBtn').textContent = 'Ачуу';
+                build3DHouse();
+                build3DWindow();
+                controls.minDistance = 1.0;
+                controls.maxDistance = 12.0;
+                controls.maxPolarAngle = Math.PI;
+                controls.target.set(0, 0, 0);
+                camera.position.set(0, 0, getEditCameraDistance());
+            }
+            controls.update();
+        }
+
+        document.getElementById('finishBtn').addEventListener('click', () => setViewMode(true));
+        document.getElementById('editBtn').addEventListener('click', () => setViewMode(false));
+
+        document.getElementById('widthInput').addEventListener('input', e => {
+            state.width = parseInt(e.target.value) || 60;
+            build3DHouse();
+            build3DWindow();
+            if (!state.isFinished) camera.position.set(0, 0, getEditCameraDistance());
+        });
+
+        document.getElementById('heightInput').addEventListener('input', e => {
+            state.height = parseInt(e.target.value) || 60;
+            build3DHouse();
+            build3DWindow();
+            if (!state.isFinished) camera.position.set(0, 0, getEditCameraDistance());
+        });
+
+        document.querySelectorAll('.part-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const count = parseInt(btn.dataset.parts);
+                state.parts = count;
+
+                const nextSashes = [];
+                const nextTransom = [];
+                for (let i = 0; i < count; i++) {
+                    nextSashes.push(state.sashes[i] || (i === 1 ? 'right' : 'fixed'));
+                    nextTransom.push(state.transomSashes[i] || 'fixed');
+                }
+                state.sashes = nextSashes;
+                state.transomSashes = nextTransom;
+
+                renderTransomControls();
+                renderSashControls();
+                build3DWindow();
+            });
+        });
+
+        document.getElementById('transomCheck').addEventListener('change', e => {
+            state.hasTransom = e.target.checked;
+            document.getElementById('transomSection').style.display = state.hasTransom ? 'flex' : 'none';
+            build3DWindow();
+        });
+
+        document.getElementById('transomHeight').addEventListener('input', e => {
+            state.transomHeight = parseInt(e.target.value) || 30;
+            build3DWindow();
+        });
+
+        document.querySelectorAll('.color-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                state.color = dot.dataset.color;
+                build3DWindow();
+            });
+        });
+
+        document.getElementById('toggleOpenBtn').addEventListener('click', (e) => {
+            state.isOpen = !state.isOpen;
+            e.target.textContent = state.isOpen ? 'Жабуу' : 'Ачуу';
+            animatedSashes.forEach(item => {
+                const isLeft = item.pivot.children[0].position.x > 0;
+                item.targetAngle = state.isOpen ? (isLeft ? 0.75 : -0.75) : 0;
+            });
+            animatedVents.forEach(item => {
+                item.targetAngle = state.isOpen ? -0.55 : 0;
+            });
+        });
+
+        window.addEventListener('resize', updateRendererSize);
+        window.addEventListener('orientationchange', () => setTimeout(updateRendererSize, 150));
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls.enabled) {
+                controls.update();
+            }
+
+            animatedSashes.forEach(item => {
+                item.pivot.rotation.y += (item.targetAngle - item.pivot.rotation.y) * 0.1;
+            });
+
+            animatedVents.forEach(item => {
+                item.pivot.rotation.x += (item.targetAngle - item.pivot.rotation.x) * 0.1;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        renderTransomControls();
+        renderSashControls();
+        build3DHouse();
+        build3DWindow();
+        updateRendererSize();
+        animate();
+    </script>
+</body>
+</html>
