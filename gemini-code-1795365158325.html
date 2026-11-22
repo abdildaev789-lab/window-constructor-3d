@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="ky">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Үй жана Терезе Конструктору</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            overflow: hidden;
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        body {
+            display: flex;
+        }
+
+        /* Сол тараптагы жөндөө панели */
+        .sidebar {
+            flex: 0 0 345px;
+            width: 345px;
+            min-width: 345px;
+            background: #ffffff;
+            padding: 14px 16px;
+            border-right: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            z-index: 10;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.08);
+        }
+
+        body.view-mode .sidebar {
+            display: none;
+        }
+
+        /* Макеттөө режимдерин которуучу баскычтар */
+        .mode-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            flex-shrink: 0;
+        }
+
+        .mode-tab {
+            padding: 9px 8px;
+            border: none;
+            background: transparent;
+            color: #475569;
+            border-radius: 6px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .mode-tab.active {
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        .sidebar h2 {
+            font-size: 1.08rem;
+            color: #1d4ed8;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 5px;
+        }
+
+        .group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .group label {
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .input-box span {
+            font-size: 0.74rem;
+            color: #64748b;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 16px;
+            color: #1e293b;
+            background: #ffffff;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .part-btn, .transom-part-btn {
+            padding: 9px 4px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #1e293b;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .part-btn.active, .transom-part-btn.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 9px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .sash-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #f8fafc;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .sash-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.86rem;
+            color: #334155;
+        }
+
+        .sash-item span {
+            white-space: nowrap;
+        }
+
+        .colors {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #94a3b8;
+            transition: transform 0.15s ease;
+        }
+
+        .color-dot.active {
+            border: 3px solid #2563eb;
+            transform: scale(1.15);
+        }
+
+        .glass-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .glass-btn {
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #1e293b;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.84rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            text-align: left;
+        }
+
+        .glass-btn.active {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #2563eb;
+        }
+
+        .glass-swatch {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid rgba(15, 23, 42, 0.25);
+            flex-shrink: 0;
+        }
+
+        .finish-btn {
+            margin-top: auto;
+            padding: 12px;
+            background: #16a34a;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+            flex-shrink: 0;
+        }
+
+        .finish-btn:hover {
+            background: #15803d;
+        }
+
+        /* 3D Экран */
+        #canvas-container {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            height: 100%;
+            position: relative;
+            background: linear-gradient(to bottom, #93c5fd 0%, #dbeafe 65%, #e2e8f0 100%);
+            touch-action: none;
+        }
+
+        #canvas-container canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            touch-action: none;
+        }
+
+        body.view-mode #canvas-container {
+            cursor: grab;
+        }
+
+        body.view-mode #canvas-container:active {
+            cursor: grabbing;
+        }
+
+        /* Көрүү режиминдеги баскычтар */
+        .view-overlay {
+            display: none;
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        body.view-mode .view-overlay {
+            display: flex;
+        }
+
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .back-btn, .open-btn, .tilt-btn {
+            pointer-events: auto;
+            padding: 11px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.92rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: none;
+            white-space: nowrap;
+        }
+
+        .back-btn {
+            background: #ffffff;
+            color: #1e293b;
+        }
+
+        .open-btn {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .tilt-btn {
+            background: #0f766e;
+            color: #ffffff;
+        }
+
+        .tilt-btn.active {
+            background: #0d9488;
+            box-shadow: 0 0 0 2px #ffffff, 0 4px 12px rgba(13, 148, 136, 0.45);
+        }
+
+        .status-note {
+            display: none;
+            position: absolute;
+            inset: 16px;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 30;
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+
+        /* Телефон экрандары үчүн адаптация */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column-reverse;
+            }
+            .sidebar {
+                flex: 0 0 54%;
+                width: 100%;
+                min-width: 100%;
+                height: 54%;
+                padding: 12px 14px;
+                gap: 9px;
+                border-right: none;
+                border-top: 1px solid #cbd5e1;
+                box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.08);
+            }
+            .sidebar h2 {
+                font-size: 1.02rem;
+                padding-bottom: 4px;
+            }
+            #canvas-container {
+                flex: 1 1 46%;
+                width: 100%;
+                height: 46%;
+            }
+            body.view-mode #canvas-container {
+                flex: 1 1 100%;
+                height: 100%;
+            }
+            body.view-mode .sidebar {
+                display: none;
+            }
+            .view-overlay {
+                flex-wrap: wrap;
+                top: 12px;
+                left: 12px;
+                right: 12px;
+            }
+            .back-btn, .open-btn, .tilt-btn {
+                padding: 9px 13px;
+                font-size: 0.86rem;
+            }
+            .finish-btn {
+                position: sticky;
+                bottom: 0;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="mode-tabs">
+            <button class="mode-tab active" id="tabWindowBtn" data-tab="window">Терезе макеттөө</button>
+            <button class="mode-tab" id="tabVerandaBtn" data-tab="veranda">Веранда макеттөө</button>
+        </div>
+
+        <h2 id="panelTitle">Терезе макеттөө</h2>
+
+        <div class="group" id="sizeGroup">
+            <label>1. Өлчөмү (см):</label>
+            <div class="row">
+                <div class="input-box">
+                    <span>Туурасы (см)</span>
+                    <input type="number" id="widthInput" value="210" min="60" max="380">
+                </div>
+                <div class="input-box">
+                    <span>Бийиктиги (см)</span>
+                    <input type="number" id="heightInput" value="180" min="60" max="260">
+                </div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label id="colorLabel">2. Профиль түсү:</label>
+            <div class="colors" id="colorDots">
+                <div class="color-dot" style="background:#ffffff;" data-color="#f8fafc" title="Ак"></div>
+                <div class="color-dot active" style="background:#27272a;" data-color="#27272a" title="Антрацит / Кара"></div>
+                <div class="color-dot" style="background:#6b3e26;" data-color="#6b3e26" title="Алтын эмен"></div>
+                <div class="color-dot" style="background:#475569;" data-color="#475569" title="Боз"></div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label id="glassLabel">3. Айне стили:</label>
+            <div class="glass-grid" id="glassStyleBtns">
+                <button class="glass-btn active" data-glass="transparent">
+                    <span class="glass-swatch" style="background: rgba(224, 242, 254, 0.55);"></span>
+                    <span>Прозрачный</span>
+                </button>
+                <button class="glass-btn" data-glass="udyyvyi">
+                    <span class="glass-swatch" style="background: rgba(251, 191, 36, 0.55);"></span>
+                    <span>Удывый</span>
+                </button>
+                <button class="glass-btn" data-glass="blue">
+                    <span class="glass-swatch" style="background: rgba(2, 132, 199, 0.65);"></span>
+                    <span>Көк</span>
+                </button>
+                <button class="glass-btn" data-glass="mirror">
+                    <span class="glass-swatch" style="background: linear-gradient(135deg, #64748b 0%, #f8fafc 45%, #94a3b8 65%, #e2e8f0 100%);"></span>
+                    <span>Зеркальный</span>
+                </button>
+                <button class="glass-btn" data-glass="frosted">
+                    <span class="glass-swatch" style="background: rgba(241, 245, 249, 0.92);"></span>
+                    <span>Матовый</span>
+                </button>
+                <button class="glass-btn" data-glass="tinted">
+                    <span class="glass-swatch" style="background: rgba(51, 65, 85, 0.72);"></span>
+                    <span>Тонированный</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="group">
+            <label id="partsLabel">4. Бөлүнүшү (1–4):</label>
+            <div class="btn-group" id="divisionBtns">
+                <button class="part-btn" data-parts="1">1</button>
+                <button class="part-btn" data-parts="2">2</button>
+                <button class="part-btn active" data-parts="3">3</button>
+                <button class="part-btn" data-parts="4">4</button>
+            </div>
+        </div>
+
+        <div class="group">
+            <label id="topTransomLabel">5. Үстүнкү торко (Фрамуга):</label>
+            <label class="checkbox-row">
+                <input type="checkbox" id="transomCheck" checked>
+                <span>Үстүнөн торко бөлүү</span>
+            </label>
+            <div id="transomSection" style="display: flex; flex-direction: column; gap: 7px;">
+                <div class="input-box">
+                    <span>Үстүнкү торконун бийиктиги (см):</span>
+                    <input type="number" id="transomHeight" value="40" min="25" max="120">
+                </div>
+                <div class="input-box">
+                    <span>Үстүнкү торко канча бөлүктөн турат (1–4):</span>
+                    <div class="btn-group" id="transomDivisionBtns">
+                        <button class="transom-part-btn" data-tparts="1">1</button>
+                        <button class="transom-part-btn" data-tparts="2">2</button>
+                        <button class="transom-part-btn active" data-tparts="3">3</button>
+                        <button class="transom-part-btn" data-tparts="4">4</button>
+                    </div>
+                </div>
+                <label>Үстүнкү торко бөлүктөрү (Форточка):</label>
+                <div class="sash-list" id="transomControls"></div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label id="botTransomLabel">6. Астынкы торко:</label>
+            <label class="checkbox-row">
+                <input type="checkbox" id="bottomTransomCheck">
+                <span>Астынан торко бөлүү</span>
+            </label>
+            <div id="bottomTransomSection" style="display: none; flex-direction: column; gap: 6px;">
+                <div class="input-box">
+                    <span>Астынкы торконун бийиктиги (см):</span>
+                    <input type="number" id="bottomTransomHeight" value="40" min="25" max="120">
+                </div>
+                <label>Астынкы торко бөлүктөрү (Форточка):</label>
+                <div class="sash-list" id="bottomTransomControls"></div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label id="sashesLabel">7. Ортоңку бөлүктөр жана ачылышы:</label>
+            <div class="sash-list" id="sashControls"></div>
+        </div>
+
+        <button class="finish-btn" id="finishBtn">Алга</button>
+    </div>
+
+    <div id="canvas-container">
+        <div class="view-overlay">
+            <button class="back-btn" id="editBtn">Артка</button>
+            <div class="action-group">
+                <button class="open-btn" id="toggleOpenBtn">Ачуу</button>
+                <button class="tilt-btn" id="toggleTiltBtn">Сл ачуу</button>
+            </div>
+        </div>
+        <div class="status-note" id="statusNote">
+            <strong>3D графика жүктөлбөй калды</strong>
+            <span>Интернет байланышын текшерип, баракчаны жаңылап көрүңүз.</span>
+        </div>
+    </div>
+
+    <script>
+        const TILT_18_DEG = THREE.MathUtils.degToRad(18);
+        const DIVIDER_WALL_X = 1.05;
+        const WALL_THICKNESS = 0.42; // Дубалдын калыңдыгы (42 см)
+
+        let state = {
+            activeTab: 'window', // 'window' | 'veranda'
+            window: {
+                width: 210,
+                height: 180,
+                parts: 3,
+                hasTransom: true,
+                transomHeight: 40,
+                transomParts: 3,
+                transomSashes: ['fixed', 'vent', 'fixed'],
+                hasBottomTransom: false,
+                bottomTransomHeight: 40,
+                bottomTransomSashes: ['fixed', 'fixed', 'fixed'],
+                sashes: ['fixed', 'right', 'fixed'],
+                color: '#27272a',
+                glassStyle: 'transparent'
+            },
+            veranda: {
+                width: 448,
+                height: 331,
+                parts: 3,
+                hasTransom: true,
+                transomHeight: 45,
+                transomParts: 4,
+                transomSashes: ['vent', 'vent', 'vent', 'vent'],
+                hasBottomTransom: false,
+                bottomTransomHeight: 45,
+                bottomTransomSashes: ['fixed', 'fixed', 'fixed'],
+                sashes: ['fixed', 'fixed', 'fixed'],
+                color: '#27272a',
+                glassStyle: 'transparent'
+            },
+            openMode: 'closed', // 'closed' | 'swing' | 'tilt18'
+            isFinished: false
+        };
+
+        function getCurrentConfig() {
+            return state[state.activeTab];
+        }
+
+        const container = document.getElementById('canvas-container');
+        const statusNote = document.getElementById('statusNote');
+
+        let scene, camera, renderer, controls;
+        let houseGroup, windowGroup, verandaGroup;
+        let animatedSashes = [];
+        let animatedVents = [];
+        let threeReady = false;
+        let frostedTexture = null;
+        let mirrorEnvTexture = null;
+
+        function createFrostedTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(0, 0, 256, 256);
+
+            for (let i = 0; i < 4500; i++) {
+                const x = Math.random() * 256;
+                const y = Math.random() * 256;
+                const r = 0.6 + Math.random() * 1.8;
+                const alpha = 0.04 + Math.random() * 0.08;
+                ctx.fillStyle = i % 2 === 0
+                    ? `rgba(255, 255, 255, ${alpha})`
+                    : `rgba(148, 163, 184, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(3, 3);
+            return tex;
+        }
+
+        function createMirrorEnvTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 0, 256);
+            grad.addColorStop(0.0, '#38bdf8');
+            grad.addColorStop(0.42, '#bae6fd');
+            grad.addColorStop(0.52, '#f8fafc');
+            grad.addColorStop(0.56, '#94a3b8');
+            grad.addColorStop(1.0, '#475569');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 256);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+            ctx.beginPath();
+            ctx.ellipse(120, 62, 70, 18, 0, 0, Math.PI * 2);
+            ctx.ellipse(360, 48, 85, 22, 0, 0, Math.PI * 2);
+            ctx.ellipse(250, 88, 60, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            const sheen = ctx.createLinearGradient(0, 0, 512, 256);
+            sheen.addColorStop(0.25, 'rgba(255,255,255,0)');
+            sheen.addColorStop(0.45, 'rgba(255,255,255,0.45)');
+            sheen.addColorStop(0.55, 'rgba(255,255,255,0.12)');
+            sheen.addColorStop(0.75, 'rgba(255,255,255,0)');
+            ctx.fillStyle = sheen;
+            ctx.fillRect(0, 0, 512, 256);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.mapping = THREE.EquirectangularReflectionMapping;
+            return tex;
+        }
+
+        function createGlassMaterial(glassStyle) {
+            switch (glassStyle) {
+                case 'udyyvyi':
+                    return new THREE.MeshPhysicalMaterial({
+                        color: 0xfbbf24,
+                        transparent: true,
+                        opacity: 0.42,
+                        roughness: 0.12,
+                        metalness: 0.08,
+                        side: THREE.DoubleSide
+                    });
+                case 'blue':
+                    return new THREE.MeshPhysicalMaterial({
+                        color: 0x0284c7,
+                        transparent: true,
+                        opacity: 0.5,
+                        roughness: 0.08,
+                        metalness: 0.16,
+                        side: THREE.DoubleSide
+                    });
+                case 'mirror':
+                    if (!mirrorEnvTexture) {
+                        mirrorEnvTexture = createMirrorEnvTexture();
+                    }
+                    return new THREE.MeshStandardMaterial({
+                        color: 0xf1f5f9,
+                        envMap: mirrorEnvTexture,
+                        envMapIntensity: 1.45,
+                        transparent: false,
+                        opacity: 1.0,
+                        roughness: 0.03,
+                        metalness: 0.98,
+                        side: THREE.DoubleSide
+                    });
+                case 'frosted':
+                    if (!frostedTexture) {
+                        frostedTexture = createFrostedTexture();
+                    }
+                    return new THREE.MeshPhysicalMaterial({
+                        map: frostedTexture,
+                        color: 0xf8fafc,
+                        transparent: true,
+                        opacity: 0.84,
+                        roughness: 0.65,
+                        metalness: 0.02,
+                        side: THREE.DoubleSide
+                    });
+                case 'tinted':
+                    return new THREE.MeshPhysicalMaterial({
+                        color: 0x334155,
+                        transparent: true,
+                        opacity: 0.62,
+                        roughness: 0.12,
+                        metalness: 0.25,
+                        side: THREE.DoubleSide
+                    });
+                case 'transparent':
+                default:
+                    return new THREE.MeshPhysicalMaterial({
+                        color: 0xe0f2fe,
+                        transparent: true,
+                        opacity: 0.25,
+                        roughness: 0.05,
+                        metalness: 0.1,
+                        side: THREE.DoubleSide
+                    });
+            }
+        }
+
+        function updateOverlayButtons() {
+            const openBtn = document.getElementById('toggleOpenBtn');
+            const tiltBtn = document.getElementById('toggleTiltBtn');
+
+            if (state.openMode === 'swing') {
+                openBtn.textContent = 'Жабуу';
+                tiltBtn.textContent = 'Сл ачуу';
+                tiltBtn.classList.remove('active');
+            } else if (state.openMode === 'tilt18') {
+                openBtn.textContent = 'Ачуу';
+                tiltBtn.textContent = 'Жабуу (18°)';
+                tiltBtn.classList.add('active');
+            } else {
+                openBtn.textContent = 'Ачуу';
+                tiltBtn.textContent = 'Сл ачуу';
+                tiltBtn.classList.remove('active');
+            }
+        }
+
+        function applyMechanismTargets() {
+            const isSwing = state.openMode === 'swing';
+            const isTilt18 = state.openMode === 'tilt18';
+
+            animatedSashes.forEach(item => {
+                if (isSwing) {
+                    item.targetYaw = item.swingSign * 0.75;
+                    item.targetPitch = 0;
+                } else if (isTilt18) {
+                    item.targetYaw = 0;
+                    item.targetPitch = -TILT_18_DEG;
+                } else {
+                    item.targetYaw = 0;
+                    item.targetPitch = 0;
+                }
+            });
+
+            animatedVents.forEach(item => {
+                if (isSwing) {
+                    item.targetPitch = -0.55;
+                } else if (isTilt18) {
+                    item.targetPitch = -TILT_18_DEG;
+                } else {
+                    item.targetPitch = 0;
+                }
+            });
+        }
+
+        function initThree() {
+            if (!window.THREE || !THREE.OrbitControls) {
+                statusNote.style.display = 'flex';
+                return;
+            }
+            threeReady = true;
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(42, Math.max(container.clientWidth, 1) / Math.max(container.clientHeight, 1), 0.1, 150);
+            camera.position.set(0, 0, 3.5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.08;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.08;
+            controls.touches = {
+                ONE: THREE.TOUCH.ROTATE,
+                TWO: THREE.TOUCH.DOLLY_PAN
+            };
+            controls.target.set(0, 0, 0);
+            controls.enabled = false;
+            controls.update();
+
+            const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x94a3b8, 0.85);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.2);
+            sunLight.position.set(-10, 16, 12);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 1024;
+            sunLight.shadow.mapSize.height = 1024;
+            sunLight.shadow.camera.near = 1;
+            sunLight.shadow.camera.far = 40;
+            const d = 10;
+            sunLight.shadow.camera.left = -d;
+            sunLight.shadow.camera.right = d;
+            sunLight.shadow.camera.top = d;
+            sunLight.shadow.camera.bottom = -d;
+            sunLight.shadow.bias = -0.0005;
+            scene.add(sunLight);
+
+            houseGroup = new THREE.Group();
+            windowGroup = new THREE.Group();
+            verandaGroup = new THREE.Group();
+            scene.add(houseGroup);
+            scene.add(windowGroup);
+            scene.add(verandaGroup);
+
+            rebuildAll3D();
+            updateRendererSize();
+            animate();
+        }
+
+        function createBrickTexture(repeatX, repeatY) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(0, 0, 512, 512);
+            const rows = 16;
+            const cols = 8;
+            const rowH = 512 / rows;
+            const colW = 512 / cols;
+            for (let r = 0; r < rows; r++) {
+                const offset = (r % 2) * (colW / 2);
+                for (let c = -1; c <= cols; c++) {
+                    const shade = 140 + Math.floor(Math.random() * 35);
+                    ctx.fillStyle = `rgb(${shade}, ${Math.floor(shade * 0.42)}, ${Math.floor(shade * 0.32)})`;
+                    ctx.fillRect(c * colW + offset + 2, r * rowH + 2, colW - 4, rowH - 4);
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(repeatX, repeatY);
+            return tex;
+        }
+
+        function createRoofTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, 0, 256, 256);
+
+            for (let y = 0; y < 256; y += 32) {
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, y + 28, 256, 4);
+                for (let x = 0; x < 256; x += 32) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                    ctx.beginPath();
+                    ctx.arc(x + 16, y + 24, 15, 0, Math.PI, false);
+                    ctx.stroke();
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(10, 8);
+            return tex;
+        }
+
+        let brickTex, extrudeBrickTex, roofTex;
+
+        // Форточка: өйдө жагындагы топсадан ичкериге (+Z) ачылат
+        function addVentToGroup(targetGroup, cellW, cellH, xCenter, yCenter, ventType, depth, frameMat, glassMat, handleMat) {
+            if (ventType === 'fixed') {
+                const glass = new THREE.Mesh(new THREE.BoxGeometry(cellW, cellH, 0.015), glassMat);
+                glass.position.set(xCenter, yCenter, 0);
+                targetGroup.add(glass);
+                return;
+            }
+
+            const ventPivot = new THREE.Group();
+            ventPivot.position.set(xCenter, yCenter + cellH / 2, depth * 0.2);
+
+            const ventLeaf = new THREE.Group();
+            ventLeaf.position.set(0, -cellH / 2, 0);
+
+            const vThick = 0.032;
+            const vDepth = 0.045;
+
+            const vtTop = new THREE.Mesh(new THREE.BoxGeometry(cellW, vThick, vDepth), frameMat);
+            vtTop.position.set(0, cellH / 2 - vThick / 2, 0);
+            ventLeaf.add(vtTop);
+
+            const vtBot = new THREE.Mesh(new THREE.BoxGeometry(cellW, vThick, vDepth), frameMat);
+            vtBot.position.set(0, -cellH / 2 + vThick / 2, 0);
+            ventLeaf.add(vtBot);
+
+            const vtLeft = new THREE.Mesh(new THREE.BoxGeometry(vThick, cellH - vThick * 2, vDepth), frameMat);
+            vtLeft.position.set(-cellW / 2 + vThick / 2, 0, 0);
+            ventLeaf.add(vtLeft);
+
+            const vtRight = new THREE.Mesh(new THREE.BoxGeometry(vThick, cellH - vThick * 2, vDepth), frameMat);
+            vtRight.position.set(cellW / 2 - vThick / 2, 0, 0);
+            ventLeaf.add(vtRight);
+
+            const vGlass = new THREE.Mesh(new THREE.BoxGeometry(cellW - vThick * 2, cellH - vThick * 2, 0.015), glassMat);
+            ventLeaf.add(vGlass);
+
+            const vHandle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.014, 0.02), handleMat);
+            vHandle.position.set(0, -cellH / 2 + vThick / 2, vDepth / 2 + 0.009);
+            ventLeaf.add(vHandle);
+
+            ventPivot.add(ventLeaf);
+            targetGroup.add(ventPivot);
+
+            animatedVents.push({
+                pivot: ventPivot,
+                targetPitch: state.openMode === 'swing' ? -0.55 : (state.openMode === 'tilt18' ? -TILT_18_DEG : 0)
+            });
+        }
+
+        // Үйдүн ичиндеги, дубалга жараша кичирейтилген подоконник (көрүү режиминде гана кошулат)
+        function addInteriorWindowsill(targetGroup, W, H, frameMat) {
+            const sillMat = new THREE.MeshStandardMaterial({
+                color: 0xf8fafc,
+                roughness: 0.35,
+                metalness: 0.08
+            });
+
+            // Үйдүн ичинде: windowGroup'тун -Z тарабы бөлмөнүн ичине карайт
+            const sillOverhangX = 0.035; // Эки четинен 3.5 см гана чыгат (кичирейтилген)
+            const sillDepth = WALL_THICKNESS - 0.04; // Дубалдын калыңдыгына (42 см) жараша кичирейтилген
+            const sillHeight = 0.034;
+            const sillW = W + sillOverhangX * 2;
+            const sillY = -H / 2 - sillHeight / 2;
+            const sillZ = -(sillDepth / 2 - 0.03); // Терезе рамкасынын түбүнөн бөлмөнүн ичине карай (-Z)
+
+            const sillBoard = new THREE.Mesh(
+                new THREE.BoxGeometry(sillW, sillHeight, sillDepth),
+                sillMat
+            );
+            sillBoard.position.set(0, sillY, sillZ);
+            sillBoard.castShadow = true;
+            sillBoard.receiveShadow = true;
+            targetGroup.add(sillBoard);
+
+            // Подоконниктин ички бөлмө жак четинин канты
+            const innerLip = new THREE.Mesh(
+                new THREE.BoxGeometry(sillW + 0.006, sillHeight + 0.004, 0.018),
+                frameMat
+            );
+            innerLip.position.set(0, sillY, sillZ - sillDepth / 2);
+            targetGroup.add(innerLip);
+        }
+
+        function populateGlazedUnit(targetGroup, cfg, widthMeters, heightMeters, options = {}) {
+            const W = widthMeters;
+            const H = heightMeters;
+            const depth = options.depth || 0.08;
+            const frameThick = options.frameThick || 0.06;
+
+            const heightCm = Math.round(H * 100);
+            let topCm = cfg.hasTransom ? Math.max(25, cfg.transomHeight) : 0;
+            let botCm = cfg.hasBottomTransom ? Math.max(25, cfg.bottomTransomHeight) : 0;
+            const minMainCm = 35;
+
+            if (topCm + botCm > heightCm - minMainCm) {
+                const avail = Math.max(0, heightCm - minMainCm);
+                if (cfg.hasTransom && cfg.hasBottomTransom) {
+                    const ratio = topCm / (topCm + botCm);
+                    topCm = Math.floor(avail * ratio);
+                    botCm = avail - topCm;
+                } else if (cfg.hasTransom) {
+                    topCm = avail;
+                } else if (cfg.hasBottomTransom) {
+                    botCm = avail;
+                }
+            }
+
+            const tH = cfg.hasTransom ? topCm / 100 : 0;
+            const bH = cfg.hasBottomTransom ? botCm / 100 : 0;
+
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: cfg.color,
+                roughness: 0.35,
+                metalness: 0.15
+            });
+
+            const glassMat = createGlassMaterial(cfg.glassStyle);
+
+            const handleMat = new THREE.MeshStandardMaterial({
+                color: cfg.color === '#f8fafc' ? '#94a3b8' : '#e2e8f0',
+                roughness: 0.25,
+                metalness: 0.8
+            });
+
+            // Сырткы рамка
+            const topBar = new THREE.Mesh(new THREE.BoxGeometry(W, frameThick, depth), frameMat);
+            topBar.position.set(0, H / 2 - frameThick / 2, 0);
+            targetGroup.add(topBar);
+
+            const bottomBar = new THREE.Mesh(new THREE.BoxGeometry(W, frameThick, depth), frameMat);
+            bottomBar.position.set(0, -H / 2 + frameThick / 2, 0);
+            targetGroup.add(bottomBar);
+
+            const leftBar = new THREE.Mesh(new THREE.BoxGeometry(frameThick, H - frameThick * 2, depth), frameMat);
+            leftBar.position.set(-W / 2 + frameThick / 2, 0, 0);
+            targetGroup.add(leftBar);
+
+            const rightBar = new THREE.Mesh(new THREE.BoxGeometry(frameThick, H - frameThick * 2, depth), frameMat);
+            rightBar.position.set(W / 2 - frameThick / 2, 0, 0);
+            targetGroup.add(rightBar);
+
+            // Подоконник үйдү көрүү режиминде (isFinished = true) жана үйдүн ичинде гана болот
+            if (options.hasInteriorSill) {
+                addInteriorWindowsill(targetGroup, W, H, frameMat);
+            }
+
+            const impostThick = frameThick * 0.9;
+            const topImpostY = H / 2 - tH;
+            const botImpostY = -H / 2 + bH;
+
+            if (cfg.hasTransom) {
+                const transImpost = new THREE.Mesh(new THREE.BoxGeometry(W - frameThick * 2, impostThick, depth), frameMat);
+                transImpost.position.set(0, topImpostY, 0);
+                targetGroup.add(transImpost);
+            }
+
+            if (cfg.hasBottomTransom) {
+                const botTransImpost = new THREE.Mesh(new THREE.BoxGeometry(W - frameThick * 2, impostThick, depth), frameMat);
+                botTransImpost.position.set(0, botImpostY, 0);
+                targetGroup.add(botTransImpost);
+            }
+
+            const innerW = W - frameThick * 2;
+            const topInnerEdge = cfg.hasTransom ? (topImpostY - impostThick / 2) : (H / 2 - frameThick);
+            const botInnerEdge = cfg.hasBottomTransom ? (botImpostY + impostThick / 2) : (-H / 2 + frameThick);
+
+            // 1. Үстүнкү торконун (Фрамуга) өз алдынча вертикалдуу импосттору жана бөлүктөрү
+            if (cfg.hasTransom) {
+                const tParts = Math.min(4, Math.max(1, cfg.transomParts || cfg.parts));
+                const tPartW = innerW / tParts;
+                const topOuterEdge = H / 2 - frameThick;
+                const topCellH = Math.max(0.05, topOuterEdge - (topImpostY + impostThick / 2));
+                const topY = (topOuterEdge + topImpostY + impostThick / 2) / 2;
+
+                for (let i = 1; i < tParts; i++) {
+                    const xPos = -innerW / 2 + i * tPartW;
+                    const tVImpost = new THREE.Mesh(new THREE.BoxGeometry(frameThick * 0.8, topCellH, depth), frameMat);
+                    tVImpost.position.set(xPos, topY, 0);
+                    targetGroup.add(tVImpost);
+                }
+
+                for (let i = 0; i < tParts; i++) {
+                    const xCenter = -innerW / 2 + (i + 0.5) * tPartW;
+                    const cellW = Math.max(0.04, tPartW - frameThick * 0.8);
+                    const ventType = cfg.transomSashes[i] || 'fixed';
+                    addVentToGroup(targetGroup, cellW, topCellH, xCenter, topY, ventType, depth, frameMat, glassMat, handleMat);
+                }
+            }
+
+            // 2. Астынкы торконун жана ортоңку бөлүктөрдүн вертикалдуу импосттору
+            const partW = innerW / cfg.parts;
+            const lowerZoneTop = topInnerEdge;
+            const lowerZoneBot = -H / 2 + frameThick;
+            const lowerZoneH = Math.max(0.1, lowerZoneTop - lowerZoneBot);
+            const lowerZoneY = (lowerZoneTop + lowerZoneBot) / 2;
+
+            for (let i = 1; i < cfg.parts; i++) {
+                const xPos = -innerW / 2 + i * partW;
+                const vImpost = new THREE.Mesh(new THREE.BoxGeometry(frameThick * 0.85, lowerZoneH, depth), frameMat);
+                vImpost.position.set(xPos, lowerZoneY, 0);
+                targetGroup.add(vImpost);
+            }
+
+            // 3. Астынкы торко бөлүктөрү
+            if (cfg.hasBottomTransom) {
+                const botOuterEdge = -H / 2 + frameThick;
+                const botCellH = Math.max(0.05, (botImpostY - impostThick / 2) - botOuterEdge);
+                const botCellY = (botOuterEdge + botImpostY - impostThick / 2) / 2;
+
+                for (let i = 0; i < cfg.parts; i++) {
+                    const xCenter = -innerW / 2 + (i + 0.5) * partW;
+                    const cellW = partW - frameThick * 0.85;
+                    const ventType = cfg.bottomTransomSashes[i] || 'fixed';
+                    addVentToGroup(targetGroup, cellW, botCellH, xCenter, botCellY, ventType, depth, frameMat, glassMat, handleMat);
+                }
+            }
+
+            // 4. Ортоңку бөлүктөр
+            const mainCellH = Math.max(0.1, topInnerEdge - botInnerEdge);
+            const mainCellY = (topInnerEdge + botInnerEdge) / 2;
+
+            for (let i = 0; i < cfg.parts; i++) {
+                const type = cfg.sashes[i] || 'fixed';
+                const xCenter = -innerW / 2 + (i + 0.5) * partW;
+                const sW = partW - frameThick * 0.85;
+
+                if (type === 'fixed') {
+                    const glass = new THREE.Mesh(new THREE.BoxGeometry(sW, mainCellH, 0.015), glassMat);
+                    glass.position.set(xCenter, mainCellY, 0);
+                    targetGroup.add(glass);
+                } else {
+                    const swingPivot = new THREE.Group();
+                    const hingeX = type === 'left' ? xCenter - sW / 2 : xCenter + sW / 2;
+                    swingPivot.position.set(hingeX, mainCellY, depth * 0.2);
+
+                    const tiltPivot = new THREE.Group();
+                    tiltPivot.position.set(type === 'left' ? sW / 2 : -sW / 2, -mainCellH / 2, 0);
+
+                    const sashGroup = new THREE.Group();
+                    sashGroup.position.set(0, mainCellH / 2, 0);
+
+                    const sThick = 0.045;
+                    const sDepth = 0.05;
+
+                    const stTop = new THREE.Mesh(new THREE.BoxGeometry(sW, sThick, sDepth), frameMat);
+                    stTop.position.set(0, mainCellH / 2 - sThick / 2, 0);
+                    sashGroup.add(stTop);
+
+                    const stBot = new THREE.Mesh(new THREE.BoxGeometry(sW, sThick, sDepth), frameMat);
+                    stBot.position.set(0, -mainCellH / 2 + sThick / 2, 0);
+                    sashGroup.add(stBot);
+
+                    const stLeft = new THREE.Mesh(new THREE.BoxGeometry(sThick, mainCellH - sThick * 2, sDepth), frameMat);
+                    stLeft.position.set(-sW / 2 + sThick / 2, 0, 0);
+                    sashGroup.add(stLeft);
+
+                    const stRight = new THREE.Mesh(new THREE.BoxGeometry(sThick, mainCellH - sThick * 2, sDepth), frameMat);
+                    stRight.position.set(sW / 2 - sThick / 2, 0, 0);
+                    sashGroup.add(stRight);
+
+                    const sGlass = new THREE.Mesh(new THREE.BoxGeometry(sW - sThick * 2, mainCellH - sThick * 2, 0.015), glassMat);
+                    sashGroup.add(sGlass);
+
+                    const handleX = type === 'left' ? sW / 2 - sThick / 2 : -sW / 2 + sThick / 2;
+                    const handleBase = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.055, 0.015), handleMat);
+                    handleBase.position.set(handleX, 0, sDepth / 2 + 0.007);
+                    sashGroup.add(handleBase);
+
+                    const handleLever = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.11, 0.02), handleMat);
+                    handleLever.position.set(handleX, -0.04, sDepth / 2 + 0.022);
+                    sashGroup.add(handleLever);
+
+                    tiltPivot.add(sashGroup);
+                    swingPivot.add(tiltPivot);
+                    targetGroup.add(swingPivot);
+
+                    const swingSign = type === 'left' ? 0.75 : -0.75;
+                    animatedSashes.push({
+                        swingPivot: swingPivot,
+                        tiltPivot: tiltPivot,
+                        swingSign: swingSign,
+                        targetYaw: state.openMode === 'swing' ? swingSign : 0,
+                        targetPitch: state.openMode === 'tilt18' ? -TILT_18_DEG : 0
+                    });
+                }
+            }
+        }
+
+        function build3DHouse() {
+            if (!threeReady) return;
+            if (!brickTex) {
+                brickTex = createBrickTexture(3, 2);
+                extrudeBrickTex = createBrickTexture(0.45, 0.45);
+                roofTex = createRoofTexture();
+            }
+
+            while (houseGroup.children.length > 0) {
+                houseGroup.remove(houseGroup.children[0]);
+            }
+
+            const boxWallMat = new THREE.MeshStandardMaterial({
+                map: brickTex,
+                bumpMap: brickTex,
+                bumpScale: 0.018,
+                roughness: 0.85
+            });
+
+            const extrudeWallMat = new THREE.MeshStandardMaterial({
+                map: extrudeBrickTex,
+                bumpMap: extrudeBrickTex,
+                bumpScale: 0.018,
+                roughness: 0.85
+            });
+
+            const plinthMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.9 });
+            const roofMat = new THREE.MeshStandardMaterial({
+                map: roofTex,
+                bumpMap: roofTex,
+                bumpScale: 0.02,
+                roughness: 0.55
+            });
+            const trimMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+            const doorLeafMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.45 });
+            const doorHandleMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.75 });
+            const doorFrameMat = new THREE.MeshStandardMaterial({
+                color: state.veranda.color,
+                roughness: 0.35,
+                metalness: 0.15
+            });
+
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(100, 100),
+                new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.9 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            houseGroup.add(ground);
+
+            const patio = new THREE.Mesh(
+                new THREE.BoxGeometry(8.6, 0.08, 7.8),
+                new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.8 })
+            );
+            patio.position.set(0, 0.04, -3.05);
+            patio.receiveShadow = true;
+            houseGroup.add(patio);
+
+            const plinth = new THREE.Mesh(new THREE.BoxGeometry(7.35, 0.65, 6.35), plinthMat);
+            plinth.position.set(0, 0.325, -3.05);
+            plinth.castShadow = true;
+            plinth.receiveShadow = true;
+            houseGroup.add(plinth);
+
+            // Кызыл сызыктын оң жагындагы калың кирпич дубал жана эшик
+            const doorX = 2.25;
+            const doorY = 1.82;
+            const doorW = 1.18;
+            const doorH = 2.34;
+            const dFrameT = 0.07;
+
+            const rightBrickWallShape = new THREE.Shape();
+            rightBrickWallShape.moveTo(DIVIDER_WALL_X, 0.65);
+            rightBrickWallShape.lineTo(3.62, 0.65);
+            rightBrickWallShape.lineTo(3.62, 4.05);
+            rightBrickWallShape.lineTo(DIVIDER_WALL_X, 4.05);
+            rightBrickWallShape.closePath();
+
+            const rightDoorHole = new THREE.Path();
+            rightDoorHole.moveTo(doorX - doorW / 2, doorY - doorH / 2);
+            rightDoorHole.lineTo(doorX + doorW / 2, doorY - doorH / 2);
+            rightDoorHole.lineTo(doorX + doorW / 2, doorY + doorH / 2);
+            rightDoorHole.lineTo(doorX - doorW / 2, doorY + doorH / 2);
+            rightDoorHole.closePath();
+            rightBrickWallShape.holes.push(rightDoorHole);
+
+            const rightBrickWall = new THREE.Mesh(
+                new THREE.ExtrudeGeometry(rightBrickWallShape, { depth: WALL_THICKNESS, bevelEnabled: false }),
+                extrudeWallMat
+            );
+            rightBrickWall.position.set(0, 0, -0.085 - WALL_THICKNESS / 2);
+            rightBrickWall.castShadow = true;
+            rightBrickWall.receiveShadow = true;
+            houseGroup.add(rightBrickWall);
+
+            // Нормалдуу эшик
+            const dTop = new THREE.Mesh(new THREE.BoxGeometry(doorW, dFrameT, WALL_THICKNESS + 0.04), doorFrameMat);
+            dTop.position.set(doorX, doorY + doorH / 2 - dFrameT / 2, -0.085);
+            dTop.castShadow = true;
+            houseGroup.add(dTop);
+
+            const dLeft = new THREE.Mesh(new THREE.BoxGeometry(dFrameT, doorH - dFrameT, WALL_THICKNESS + 0.04), doorFrameMat);
+            dLeft.position.set(doorX - doorW / 2 + dFrameT / 2, doorY - dFrameT / 2, -0.085);
+            dLeft.castShadow = true;
+            houseGroup.add(dLeft);
+
+            const dRight = new THREE.Mesh(new THREE.BoxGeometry(dFrameT, doorH - dFrameT, WALL_THICKNESS + 0.04), doorFrameMat);
+            dRight.position.set(doorX + doorW / 2 - dFrameT / 2, doorY - dFrameT / 2, -0.085);
+            dRight.castShadow = true;
+            houseGroup.add(dRight);
+
+            const doorLeaf = new THREE.Mesh(
+                new THREE.BoxGeometry(doorW - dFrameT * 2, doorH - dFrameT, 0.075),
+                doorLeafMat
+            );
+            doorLeaf.position.set(doorX, doorY - dFrameT / 2, -0.085);
+            doorLeaf.castShadow = true;
+            doorLeaf.receiveShadow = true;
+            houseGroup.add(doorLeaf);
+
+            const doorPanel = new THREE.Mesh(
+                new THREE.BoxGeometry(doorW - dFrameT * 2 - 0.24, doorH * 0.42, 0.02),
+                new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.5 })
+            );
+            doorPanel.position.set(doorX, doorY + 0.28, -0.045);
+            houseGroup.add(doorPanel);
+
+            const doorHandle = new THREE.Mesh(
+                new THREE.BoxGeometry(0.03, 0.14, 0.05),
+                doorHandleMat
+            );
+            doorHandle.position.set(doorX - (doorW / 2 - dFrameT - 0.12), doorY - 0.12, -0.025);
+            houseGroup.add(doorHandle);
+
+            const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.1, 0.95), roofMat);
+            canopy.position.set(doorX, 3.15, 0.42);
+            canopy.castShadow = true;
+            houseGroup.add(canopy);
+
+            // Оң жактагы дубал
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(WALL_THICKNESS, 3.4, 5.65), boxWallMat);
+            rightWall.position.set(3.41, 2.35, -3.05);
+            rightWall.castShadow = true;
+            rightWall.receiveShadow = true;
+            houseGroup.add(rightWall);
+
+            // Арткы дубал
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(7.24, 3.4, WALL_THICKNESS), boxWallMat);
+            backWall.position.set(0, 2.35, -6.01);
+            backWall.castShadow = true;
+            houseGroup.add(backWall);
+
+            // Сол жактагы терезеси бар дубал
+            const winW = (state.window.width || 210) / 100;
+            const winH = (state.window.height || 180) / 100;
+            const winCenterY = 2.05;
+
+            const leftWallShape = new THREE.Shape();
+            leftWallShape.moveTo(-2.85, 0.65);
+            leftWallShape.lineTo(2.85, 0.65);
+            leftWallShape.lineTo(2.85, 4.05);
+            leftWallShape.lineTo(-2.85, 4.05);
+            leftWallShape.closePath();
+
+            const hole = new THREE.Path();
+            hole.moveTo(-winW / 2, winCenterY - winH / 2);
+            hole.lineTo(winW / 2, winCenterY - winH / 2);
+            hole.lineTo(winW / 2, winCenterY + winH / 2);
+            hole.lineTo(-winW / 2, winCenterY + winH / 2);
+            hole.closePath();
+            leftWallShape.holes.push(hole);
+
+            const leftWallGeo = new THREE.ExtrudeGeometry(leftWallShape, { depth: WALL_THICKNESS, bevelEnabled: false });
+            const leftWall = new THREE.Mesh(leftWallGeo, extrudeWallMat);
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.position.set(-3.41 - WALL_THICKNESS / 2, 0, -3.05);
+            leftWall.castShadow = true;
+            leftWall.receiveShadow = true;
+            houseGroup.add(leftWall);
+
+            const innerFloor = new THREE.Mesh(
+                new THREE.PlaneGeometry(6.4, 5.4),
+                new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.7 })
+            );
+            innerFloor.rotation.x = -Math.PI / 2;
+            innerFloor.position.set(0, 0.66, -3.05);
+            houseGroup.add(innerFloor);
+
+            const innerCeiling = new THREE.Mesh(
+                new THREE.PlaneGeometry(6.4, 5.4),
+                new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 })
+            );
+            innerCeiling.rotation.x = Math.PI / 2;
+            innerCeiling.position.set(0, 4.02, -3.05);
+            houseGroup.add(innerCeiling);
+
+            const innerRightWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(5.4, 3.36),
+                new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.85 })
+            );
+            innerRightWall.rotation.y = -Math.PI / 2;
+            innerRightWall.position.set(3.19, 2.34, -3.05);
+            houseGroup.add(innerRightWall);
+
+            const innerBackWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(6.4, 3.36),
+                new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.85 })
+            );
+            innerBackWall.position.set(0, 2.34, -5.79);
+            houseGroup.add(innerBackWall);
+
+            const roomLight = new THREE.PointLight(0xffedd5, 0.9, 9);
+            roomLight.position.set(-1.5, 3.2, -3.05);
+            houseGroup.add(roomLight);
+
+            const cornerPositions = [[-3.52, -0.02], [3.52, -0.02], [-3.52, -6.08], [3.52, -6.08]];
+            cornerPositions.forEach(([cx, cz]) => {
+                const col = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.4, 0.22), trimMat);
+                col.position.set(cx, 2.35, cz);
+                col.castShadow = true;
+                houseGroup.add(col);
+            });
+
+            const cornice = new THREE.Mesh(new THREE.BoxGeometry(7.48, 0.18, 6.48), trimMat);
+            cornice.position.set(0, 4.05, -3.05);
+            houseGroup.add(cornice);
+
+            const roofShape = new THREE.Shape();
+            roofShape.moveTo(-4.0, 0);
+            roofShape.lineTo(0, 2.5);
+            roofShape.lineTo(4.0, 0);
+            roofShape.lineTo(3.8, -0.18);
+            roofShape.lineTo(0, 2.25);
+            roofShape.lineTo(-3.8, -0.18);
+            roofShape.closePath();
+
+            const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(roofShape, { depth: 6.8, bevelEnabled: false }), roofMat);
+            roof.position.set(0, 4.1, -6.45);
+            roof.castShadow = true;
+            houseGroup.add(roof);
+
+            const gableShape = new THREE.Shape();
+            gableShape.moveTo(-3.62, 0);
+            gableShape.lineTo(0, 2.25);
+            gableShape.lineTo(3.62, 0);
+            gableShape.closePath();
+            const gableWall = new THREE.Mesh(new THREE.ExtrudeGeometry(gableShape, { depth: 6.2, bevelEnabled: false }), extrudeWallMat);
+            gableWall.position.set(0, 4.1, -6.15);
+            houseGroup.add(gableWall);
+
+            const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.3, 0.65), plinthMat);
+            chimney.position.set(1.6, 6.2, -3.5);
+            chimney.castShadow = true;
+            houseGroup.add(chimney);
+
+            const pipeGeo = new THREE.CylinderGeometry(0.05, 0.05, 4.0, 12);
+            const pipe1 = new THREE.Mesh(pipeGeo, roofMat);
+            pipe1.position.set(-3.66, 2.05, 0.05);
+            houseGroup.add(pipe1);
+
+            const pipe2 = new THREE.Mesh(pipeGeo, roofMat);
+            pipe2.position.set(3.66, 2.05, 0.05);
+            houseGroup.add(pipe2);
+
+            houseGroup.visible = state.isFinished;
+        }
+
+        function rebuildAll3D() {
+            if (!threeReady) return;
+            while (windowGroup.children.length > 0) {
+                windowGroup.remove(windowGroup.children[0]);
+            }
+            while (verandaGroup.children.length > 0) {
+                verandaGroup.remove(verandaGroup.children[0]);
+            }
+            animatedSashes = [];
+            animatedVents = [];
+
+            build3DHouse();
+
+            // 1. Терезени куруу
+            const winCfg = state.window;
+            const W = (winCfg.width || 100) / 100;
+            const H = (winCfg.height || 100) / 100;
+
+            if (state.isFinished) {
+                windowGroup.position.set(-3.41, 2.05, -3.05);
+                windowGroup.rotation.y = -Math.PI / 2;
+
+                const trimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.45 });
+                const trimW = 0.09;
+
+                const topTrim = new THREE.Mesh(new THREE.BoxGeometry(W + trimW * 2, trimW, 0.05), trimMat);
+                topTrim.position.set(0, H / 2 + trimW / 2, 0.09);
+                topTrim.castShadow = true;
+                windowGroup.add(topTrim);
+
+                const leftTrim = new THREE.Mesh(new THREE.BoxGeometry(trimW, H, 0.05), trimMat);
+                leftTrim.position.set(-W / 2 - trimW / 2, 0, 0.09);
+                leftTrim.castShadow = true;
+                windowGroup.add(leftTrim);
+
+                const rightTrim = new THREE.Mesh(new THREE.BoxGeometry(trimW, H, 0.05), trimMat);
+                rightTrim.position.set(W / 2 + trimW / 2, 0, 0.09);
+                rightTrim.castShadow = true;
+                windowGroup.add(rightTrim);
+            } else {
+                windowGroup.position.set(0, 0, 0);
+                windowGroup.rotation.y = 0;
+            }
+
+            // Подоконник макеттөө режиминде жок (state.isFinished === false), үйдүн ичинде гана (state.isFinished === true) кошулат
+            populateGlazedUnit(windowGroup, winCfg, W, H, {
+                depth: 0.08,
+                frameThick: 0.06,
+                hasInteriorSill: state.isFinished
+            });
+
+            // 2. Веранда айнегин куруу
+            const verCfg = state.veranda;
+            const vLeftX = -3.41;
+            const vRightX = DIVIDER_WALL_X;
+            const vW = vRightX - vLeftX;
+            const vH = 3.96 - 0.65;
+            const vCenterX = (vLeftX + vRightX) / 2;
+            const vCenterY = 0.65 + vH / 2;
+
+            if (state.isFinished) {
+                verandaGroup.position.set(vCenterX, vCenterY, -0.085);
+                verandaGroup.rotation.y = 0;
+            } else {
+                verandaGroup.position.set(0, 0, 0);
+                verandaGroup.rotation.y = 0;
+            }
+
+            populateGlazedUnit(verandaGroup, verCfg, vW, vH, {
+                depth: 0.08,
+                frameThick: 0.065,
+                hasInteriorSill: false
+            });
+
+            if (state.isFinished) {
+                windowGroup.visible = true;
+                verandaGroup.visible = true;
+            } else {
+                windowGroup.visible = state.activeTab === 'window';
+                verandaGroup.visible = state.activeTab === 'veranda';
+            }
+        }
+
+        function syncSidebarUI() {
+            const cfg = getCurrentConfig();
+            const isWindow = state.activeTab === 'window';
+
+            document.getElementById('tabWindowBtn').classList.toggle('active', isWindow);
+            document.getElementById('tabVerandaBtn').classList.toggle('active', !isWindow);
+
+            document.getElementById('panelTitle').textContent = isWindow ? 'Терезе макеттөө' : 'Веранда макеттөө';
+            document.getElementById('sizeGroup').style.display = isWindow ? 'flex' : 'none';
+
+            if (isWindow) {
+                document.getElementById('widthInput').value = cfg.width;
+                document.getElementById('heightInput').value = cfg.height;
+                document.getElementById('colorLabel').textContent = '2. Профиль түсү:';
+                document.getElementById('glassLabel').textContent = '3. Айне стили:';
+                document.getElementById('partsLabel').textContent = '4. Бөлүнүшү (1–4):';
+                document.getElementById('topTransomLabel').textContent = '5. Үстүнкү торко (Фрамуга):';
+                document.getElementById('botTransomLabel').textContent = '6. Астынкы торко:';
+                document.getElementById('sashesLabel').textContent = '7. Ортоңку бөлүктөр жана ачылышы:';
+            } else {
+                document.getElementById('colorLabel').textContent = '1. Профиль түсү:';
+                document.getElementById('glassLabel').textContent = '2. Айне стили:';
+                document.getElementById('partsLabel').textContent = '3. Бөлүнүшү (1–4):';
+                document.getElementById('topTransomLabel').textContent = '4. Үстүнкү торко (Фрамуга):';
+                document.getElementById('botTransomLabel').textContent = '5. Астынкы торко:';
+                document.getElementById('sashesLabel').textContent = '6. Ортоңку бөлүктөр жана ачылышы:';
+            }
+
+            document.querySelectorAll('#colorDots .color-dot').forEach(dot => {
+                dot.classList.toggle('active', dot.dataset.color === cfg.color);
+            });
+
+            document.querySelectorAll('#glassStyleBtns .glass-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.glass === cfg.glassStyle);
+            });
+
+            document.querySelectorAll('#divisionBtns .part-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.parts) === cfg.parts);
+            });
+
+            document.getElementById('transomCheck').checked = cfg.hasTransom;
+            document.getElementById('transomSection').style.display = cfg.hasTransom ? 'flex' : 'none';
+            document.getElementById('transomHeight').value = cfg.transomHeight;
+
+            const tParts = Math.min(4, Math.max(1, cfg.transomParts || cfg.parts));
+            cfg.transomParts = tParts;
+            document.querySelectorAll('#transomDivisionBtns .transom-part-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.tparts) === tParts);
+            });
+
+            document.getElementById('bottomTransomCheck').checked = cfg.hasBottomTransom;
+            document.getElementById('bottomTransomSection').style.display = cfg.hasBottomTransom ? 'flex' : 'none';
+            document.getElementById('bottomTransomHeight').value = cfg.bottomTransomHeight;
+
+            renderTransomControls();
+            renderBottomTransomControls();
+            renderSashControls();
+        }
+
+        function renderTransomControls() {
+            const cfg = getCurrentConfig();
+            const list = document.getElementById('transomControls');
+            list.innerHTML = '';
+            const count = Math.min(4, Math.max(1, cfg.transomParts || cfg.parts));
+            for (let idx = 0; idx < count; idx++) {
+                const val = cfg.transomSashes[idx] || 'fixed';
+                const row = document.createElement('div');
+                row.className = 'sash-item';
+                row.innerHTML = `<span>${idx + 1}-торко:</span>`;
+
+                const sel = document.createElement('select');
+                [
+                    { v: 'fixed', t: 'Жөнөкөй (Ачылбайт)' },
+                    { v: 'vent', t: 'Форточка (Ачылат)' }
+                ].forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o.v;
+                    opt.textContent = o.t;
+                    if (o.v === val) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+
+                sel.addEventListener('change', (e) => {
+                    cfg.transomSashes[idx] = e.target.value;
+                    rebuildAll3D();
+                });
+
+                row.appendChild(sel);
+                list.appendChild(row);
+            }
+        }
+
+        function renderBottomTransomControls() {
+            const cfg = getCurrentConfig();
+            const list = document.getElementById('bottomTransomControls');
+            list.innerHTML = '';
+            cfg.bottomTransomSashes.forEach((val, idx) => {
+                const row = document.createElement('div');
+                row.className = 'sash-item';
+                row.innerHTML = `<span>${idx + 1}-торко:</span>`;
+
+                const sel = document.createElement('select');
+                [
+                    { v: 'fixed', t: 'Жөнөкөй (Ачылбайт)' },
+                    { v: 'vent', t: 'Форточка (Ачылат)' }
+                ].forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o.v;
+                    opt.textContent = o.t;
+                    if (o.v === val) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+
+                sel.addEventListener('change', (e) => {
+                    cfg.bottomTransomSashes[idx] = e.target.value;
+                    rebuildAll3D();
+                });
+
+                row.appendChild(sel);
+                list.appendChild(row);
+            });
+        }
+
+        function renderSashControls() {
+            const cfg = getCurrentConfig();
+            const list = document.getElementById('sashControls');
+            list.innerHTML = '';
+            cfg.sashes.forEach((val, idx) => {
+                const row = document.createElement('div');
+                row.className = 'sash-item';
+                row.innerHTML = `<span>${idx + 1}-бөлүк:</span>`;
+
+                const sel = document.createElement('select');
+                [
+                    { v: 'fixed', t: 'Ачылбайт (Глухой)' },
+                    { v: 'left', t: 'Солго ачылат' },
+                    { v: 'right', t: 'Оңго ачылат' }
+                ].forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o.v;
+                    opt.textContent = o.t;
+                    if (o.v === val) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+
+                sel.addEventListener('change', (e) => {
+                    cfg.sashes[idx] = e.target.value;
+                    rebuildAll3D();
+                });
+
+                row.appendChild(sel);
+                list.appendChild(row);
+            });
+        }
+
+        function getEditCameraDistance() {
+            if (!camera) return 3.5;
+            const w = Math.max(container.clientWidth, 1);
+            const h = Math.max(container.clientHeight, 1);
+            const aspect = w / h;
+
+            let unitW, unitH;
+            if (state.activeTab === 'veranda') {
+                unitW = 4.46;
+                unitH = 3.31;
+            } else {
+                unitW = (state.window.width || 210) / 100;
+                unitH = (state.window.height || 180) / 100;
+            }
+
+            const fovRad = THREE.MathUtils.degToRad(camera.fov);
+            const distH = (unitH * 1.42) / (2 * Math.tan(fovRad / 2));
+            const distW = (unitW * 1.32) / (2 * Math.tan(fovRad / 2) * aspect);
+            return Math.max(distH, distW, 2.8);
+        }
+
+        function updateRendererSize() {
+            if (!threeReady) return;
+            const w = Math.max(container.clientWidth, 1);
+            const h = Math.max(container.clientHeight, 1);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            if (!state.isFinished) {
+                camera.position.set(0, 0, getEditCameraDistance());
+            }
+        }
+
+        function setViewMode(finished) {
+            state.isFinished = finished;
+            if (controls) controls.enabled = finished;
+
+            if (finished) {
+                document.body.classList.add('view-mode');
+                updateRendererSize();
+                rebuildAll3D();
+                if (threeReady) {
+                    const isMobile = window.innerWidth <= 768;
+                    camera.position.set(isMobile ? -9.5 : -8.2, 3.6, isMobile ? 4.2 : 3.2);
+                    controls.target.set(-0.5, 2.2, -2.8);
+                    controls.minDistance = 2.2;
+                    controls.maxDistance = 18.0;
+                    controls.maxPolarAngle = Math.PI / 2 - 0.03;
+                    controls.update();
+                }
+            } else {
+                document.body.classList.remove('view-mode');
+                updateRendererSize();
+                state.openMode = 'closed';
+                updateOverlayButtons();
+                rebuildAll3D();
+                if (threeReady) {
+                    controls.minDistance = 1.0;
+                    controls.maxDistance = 12.0;
+                    controls.maxPolarAngle = Math.PI;
+                    controls.target.set(0, 0, 0);
+                    camera.position.set(0, 0, getEditCameraDistance());
+                    controls.update();
+                }
+            }
+        }
+
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                state.activeTab = tab.dataset.tab;
+                syncSidebarUI();
+                rebuildAll3D();
+                if (!state.isFinished && threeReady) {
+                    camera.position.set(0, 0, getEditCameraDistance());
+                }
+            });
+        });
+
+        document.getElementById('finishBtn').addEventListener('click', () => setViewMode(true));
+        document.getElementById('editBtn').addEventListener('click', () => setViewMode(false));
+
+        document.getElementById('widthInput').addEventListener('input', e => {
+            state.window.width = parseInt(e.target.value) || 60;
+            rebuildAll3D();
+            if (!state.isFinished && threeReady) camera.position.set(0, 0, getEditCameraDistance());
+        });
+
+        document.getElementById('heightInput').addEventListener('input', e => {
+            state.window.height = parseInt(e.target.value) || 60;
+            rebuildAll3D();
+            if (!state.isFinished && threeReady) camera.position.set(0, 0, getEditCameraDistance());
+        });
+
+        document.querySelectorAll('.glass-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.glass-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                getCurrentConfig().glassStyle = btn.dataset.glass;
+                rebuildAll3D();
+            });
+        });
+
+        // Ортоңку бөлүнүшүн тандоо (1–4)
+        document.querySelectorAll('.part-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const cfg = getCurrentConfig();
+                const count = parseInt(btn.dataset.parts);
+                cfg.parts = count;
+
+                const nextSashes = [];
+                const nextBottomTransom = [];
+                for (let i = 0; i < count; i++) {
+                    nextSashes.push(cfg.sashes[i] || (state.activeTab === 'window' && i === 1 ? 'right' : 'fixed'));
+                    nextBottomTransom.push(cfg.bottomTransomSashes[i] || 'fixed');
+                }
+                cfg.sashes = nextSashes;
+                cfg.bottomTransomSashes = nextBottomTransom;
+
+                renderBottomTransomControls();
+                renderSashControls();
+                rebuildAll3D();
+            });
+        });
+
+        // Үстүнкү торконун бөлүнүшүн өзүнчө тандоо (1–4)
+        document.querySelectorAll('.transom-part-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.transom-part-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const cfg = getCurrentConfig();
+                const tCount = parseInt(btn.dataset.tparts);
+                cfg.transomParts = tCount;
+
+                const nextTransom = [];
+                for (let i = 0; i < tCount; i++) {
+                    nextTransom.push(cfg.transomSashes[i] || (state.activeTab === 'veranda' ? 'vent' : 'fixed'));
+                }
+                cfg.transomSashes = nextTransom;
+
+                renderTransomControls();
+                rebuildAll3D();
+            });
+        });
+
+        document.getElementById('transomCheck').addEventListener('change', e => {
+            const cfg = getCurrentConfig();
+            cfg.hasTransom = e.target.checked;
+            document.getElementById('transomSection').style.display = cfg.hasTransom ? 'flex' : 'none';
+            rebuildAll3D();
+        });
+
+        document.getElementById('transomHeight').addEventListener('input', e => {
+            getCurrentConfig().transomHeight = parseInt(e.target.value) || 30;
+            rebuildAll3D();
+        });
+
+        document.getElementById('bottomTransomCheck').addEventListener('change', e => {
+            const cfg = getCurrentConfig();
+            cfg.hasBottomTransom = e.target.checked;
+            document.getElementById('bottomTransomSection').style.display = cfg.hasBottomTransom ? 'flex' : 'none';
+            rebuildAll3D();
+        });
+
+        document.getElementById('bottomTransomHeight').addEventListener('input', e => {
+            getCurrentConfig().bottomTransomHeight = parseInt(e.target.value) || 30;
+            rebuildAll3D();
+        });
+
+        document.querySelectorAll('.color-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                getCurrentConfig().color = dot.dataset.color;
+                rebuildAll3D();
+            });
+        });
+
+        document.getElementById('toggleOpenBtn').addEventListener('click', () => {
+            state.openMode = state.openMode === 'swing' ? 'closed' : 'swing';
+            updateOverlayButtons();
+            applyMechanismTargets();
+        });
+
+        document.getElementById('toggleTiltBtn').addEventListener('click', () => {
+            state.openMode = state.openMode === 'tilt18' ? 'closed' : 'tilt18';
+            updateOverlayButtons();
+            applyMechanismTargets();
+        });
+
+        window.addEventListener('resize', updateRendererSize);
+        window.addEventListener('orientationchange', () => setTimeout(updateRendererSize, 150));
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls && controls.enabled) {
+                controls.update();
+            }
+
+            animatedSashes.forEach(item => {
+                item.swingPivot.rotation.y += (item.targetYaw - item.swingPivot.rotation.y) * 0.1;
+                item.tiltPivot.rotation.x += (item.targetPitch - item.tiltPivot.rotation.x) * 0.1;
+            });
+
+            animatedVents.forEach(item => {
+                item.pivot.rotation.x += (item.targetPitch - item.pivot.rotation.x) * 0.1;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        syncSidebarUI();
+        updateOverlayButtons();
+        window.addEventListener('load', initThree);
+        if (document.readyState === 'complete') {
+            initThree();
+        }
+    </script>
+</body>
+</html>
